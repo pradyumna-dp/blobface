@@ -1,5 +1,11 @@
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+// The blobface sample: shared Compose UI plus the Desktop (jvm), Web (js/wasm)
+// and iOS (framework "Shared") entry points. Android's launcher lives in
+// :sample-android because AGP 9 does not allow an application in a KMP module.
+// Not published.
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -9,71 +15,71 @@ plugins {
 }
 
 kotlin {
-    listOf(
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
+    android {
+        namespace = "io.github.pradyumnadp.blobface.sample"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
+        compilerOptions { jvmTarget = JvmTarget.JVM_11 }
+    }
+    jvm()
+    listOf(iosArm64(), iosSimulatorArm64()).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "Shared"
             isStatic = true
         }
     }
-    jvm()
     js {
-        browser()
+        browser { commonWebpackConfig { outputFileName = "sample.js" } }
         binaries.executable()
     }
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
-        browser()
+        browser { commonWebpackConfig { outputFileName = "sample.js" } }
         binaries.executable()
     }
-    android {
-       namespace = "io.github.pradyumnadp.blobface.shared"
-       compileSdk = libs.versions.android.compileSdk.get().toInt()
-       minSdk = libs.versions.android.minSdk.get().toInt()
-       compilerOptions {
-           jvmTarget = JvmTarget.JVM_11
-       }
-       androidResources {
-           enable = true
-       }
-       withHostTest {
-           isIncludeAndroidResources = true
-       }
-       withDeviceTestBuilder {
-           sourceSetTreeName = "test"
-       }.configure {
-           instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-       }
-    }
+
     sourceSets {
-        androidMain.dependencies {
-            implementation(libs.compose.uiToolingPreview)
-            implementation(libs.compose.uiTooling)
-        }
         commonMain.dependencies {
+            implementation(project(":blobface-compose"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
             implementation(libs.compose.ui)
-            implementation(libs.compose.components.resources)
-            implementation(libs.compose.uiToolingPreview)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
         }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
-        }
-        jsMain.dependencies {
-            implementation(libs.wrappers.browser)
-        }
-        getByName("androidDeviceTest").dependencies {
-            implementation(libs.androidx.testRunner)
+        jvmMain.dependencies {
+            implementation(compose.desktop.currentOs)
+            implementation(libs.kotlinx.coroutinesSwing)
         }
     }
 }
 
-dependencies {
-    androidRuntimeClasspath(libs.compose.uiTooling)
+compose.desktop {
+    application {
+        mainClass = "io.github.pradyumnadp.blobface.sample.MainKt"
+        nativeDistributions {
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            packageName = "blobface-sample"
+            packageVersion = "1.0.0"
+        }
+    }
+}
+
+// Offscreen render of the sample for the README screenshots.
+tasks.register<JavaExec>("screenshot") {
+    group = "documentation"
+    val jvm = kotlin.jvm()
+    dependsOn(jvm.compilations["main"].compileTaskProvider)
+    classpath = files(jvm.compilations["main"].output.allOutputs, jvm.compilations["main"].runtimeDependencyFiles)
+    mainClass.set("io.github.pradyumnadp.blobface.sample.ScreenshotKt")
+    args(rootProject.layout.projectDirectory.file("docs/screenshots/desktop.png").asFile.absolutePath)
+}
+
+// Pixel comparison of the Compose renderer against the upstream-identical SVG.
+tasks.register<JavaExec>("renderCheck") {
+    group = "verification"
+    val jvm = kotlin.jvm()
+    dependsOn(jvm.compilations["main"].compileTaskProvider)
+    classpath = files(jvm.compilations["main"].output.allOutputs, jvm.compilations["main"].runtimeDependencyFiles)
+    mainClass.set("io.github.pradyumnadp.blobface.sample.RenderCheckKt")
+    args(layout.buildDirectory.dir("render-check").get().asFile.absolutePath)
 }
