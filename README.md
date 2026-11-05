@@ -173,9 +173,9 @@ scrolling crowd of 400 names.
 For iOS, open `iosApp/iosApp.xcodeproj` in Xcode and run. The build phase calls
 `:sample:embedAndSignAppleFrameworkForXcode`.
 
-| Desktop | Web (Wasm) |
-|---|---|
-| ![desktop](docs/screenshots/desktop.png) | ![web, expression = mad](docs/screenshots/web.jpg) |
+| Desktop | Web (Wasm) | Android |
+|---|---|---|
+| ![desktop](docs/screenshots/desktop.png) | ![web, expression = mad](docs/screenshots/web.jpg) | <img src="docs/screenshots/android.png" alt="android, expression = happy" width="260"> |
 
 ## Compatibility
 
