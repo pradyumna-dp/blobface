@@ -175,7 +175,7 @@ For iOS, open `iosApp/iosApp.xcodeproj` in Xcode and run. The build phase calls
 
 | Desktop | Web (Wasm) |
 |---|---|
-| ![desktop](docs/screenshots/desktop.png) | ![web](docs/screenshots/web.png) |
+| ![desktop](docs/screenshots/desktop.png) | ![web, expression = mad](docs/screenshots/web.jpg) |
 
 ## Compatibility
 
