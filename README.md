@@ -202,11 +202,10 @@ compare equal, because JSON can't represent `-0`.
 cd tools && npm ci && node generate-fixtures.mjs   # regenerate (deliberately)
 ```
 
-How the port keeps JS semantics on every platform is described in
-[docs/UPSTREAM_ANALYSIS.md](docs/UPSTREAM_ANALYSIS.md): `Math.imul`, `>>>`,
-`TextEncoder`'s handling of lone surrogates, JS `trim` whitespace,
-`Math.round` rounding halves up, JS number formatting, V8's `Math.hypot`, and
-fdlibm math (`StrictMath`) on the JVM.
+To match upstream on every platform, the port reproduces JavaScript behaviour
+explicitly: `Math.imul` and `>>>`, `TextEncoder`'s handling of lone surrogates,
+JS `trim` whitespace, `Math.round` rounding halves up, JS number formatting,
+V8's `Math.hypot`, and fdlibm math (`StrictMath`) on the JVM.
 
 ### Known differences from upstream
 
