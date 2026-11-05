@@ -1,46 +1,231 @@
-This is a Kotlin Multiplatform project targeting Android, iOS, Web, Desktop (JVM).
+# blobface
 
-* [/iosApp](./iosApp/iosApp) contains an iOS application. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+Deterministic geometric avatars from any string, for Kotlin Multiplatform and
+Compose Multiplatform.
 
-* [/shared](./shared/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./shared/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./shared/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./shared/src/jvmMain/kotlin)
-    folder is the appropriate location.
+blobface is an unofficial Kotlin Multiplatform port of
+[blobatar](https://github.com/Alain00/blobatar) by
+[@alain_0012](https://x.com/alain_0012). Not affiliated with or endorsed by the
+original author.
 
-### Running the apps
+**Compatibility:** Same input → same face as blobatar v2.7.0 (commit
+[`ebb7ea48`](https://github.com/Alain00/blobatar/commit/ebb7ea4808b1263629fc8fa65e2398b9cbdb6f6b)).
+`toSvgString()` is byte-identical to `blobatar(name, opts)`, and this is checked
+against fixtures generated from the published npm package (see
+[Compatibility](#compatibility)).
 
-Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
+![The sample app on desktop](docs/screenshots/desktop.png)
 
-- Android app: `./gradlew :androidApp:assembleDebug`
-- Desktop app:
-  - Hot reload: `./gradlew :desktopApp:hotRun --auto`
-  - Standard run: `./gradlew :desktopApp:run`
-- Web app:
-  - Wasm target (faster, modern browsers): `./gradlew :webApp:wasmJsBrowserDevelopmentRun`
-  - JS target (slower, supports older browsers): `./gradlew :webApp:jsBrowserDevelopmentRun`
-- iOS app: open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+## Install
 
-### Running tests
+```kotlin
+// build.gradle.kts (a Kotlin Multiplatform module)
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation("io.github.pradyumna-dp:blobface-compose:0.1.0") // Compose UI (includes core)
+            // or, without Compose:
+            implementation("io.github.pradyumna-dp:blobface-core:0.1.0")
+        }
+    }
+}
+```
 
-Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
+With a version catalog:
 
-- Android tests: `./gradlew :shared:testAndroidHostTest`
-- Desktop tests: `./gradlew :shared:jvmTest`
-- Web tests:
-  - Wasm target: `./gradlew :shared:wasmJsTest`
-  - JS target: `./gradlew :shared:jsTest`
-- iOS tests: `./gradlew :shared:iosSimulatorArm64Test`
+```toml
+# gradle/libs.versions.toml
+[versions]
+blobface = "0.1.0"
 
----
+[libraries]
+blobface-core = { module = "io.github.pradyumna-dp:blobface-core", version.ref = "blobface" }
+blobface-compose = { module = "io.github.pradyumna-dp:blobface-compose", version.ref = "blobface" }
+```
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html),
-[Compose Multiplatform](https://kotlinlang.org/compose-multiplatform/),
-[Kotlin/Wasm](https://kotl.in/wasm/)…
+```kotlin
+commonMain.dependencies {
+    implementation(libs.blobface.compose)
+}
+```
 
-We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public Slack channel [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web).
-If you face any issues, please report them on [YouTrack](https://youtrack.jetbrains.com/newIssue?project=CMP).
+## Usage
+
+### Compose
+
+```kotlin
+import io.github.pradyumnadp.blobface.compose.Blobface
+
+@Composable
+fun Avatar(email: String) {
+    Blobface(email)                       // 48.dp, transparent, static
+}
+```
+
+```kotlin
+Blobface(
+    name = user.email,
+    size = 96.dp,
+    background = BlobfaceBackground.Squircle,
+    expression = BlobfaceExpression.Happy,
+    animate = BlobfaceAnimation.Hover,     // hover with a mouse, press on touch
+    title = "${user.name}'s avatar",       // content description
+)
+```
+
+The face is drawn natively with Compose `Canvas`/`Path`. There's no SVG
+rendering and no WebView.
+
+#### Eyes that follow the pointer
+
+```kotlin
+BlobfacePointerArea {                      // optional: share the pointer window-wide
+    val gaze = rememberBlobfaceGaze(target = GazeTarget.Pointer, travel = 3f)
+    Blobface(user.email, size = 200.dp, animate = BlobfaceAnimation.Always, gaze = gaze)
+}
+
+// Other targets:
+gaze.lookAt(GazeTarget.Point(Offset(x, y)))   // a point in window px
+gaze.lookAt(GazeTarget.Anchor(anchor))        // an element: Modifier.gazeAnchor(anchor)
+gaze.lookAt(GazeTarget.Rest)                  // hold still, deliberately not looking
+gaze.lookAt(GazeTarget.None)                  // let go; the idle glance comes back
+```
+
+### Core (no Compose)
+
+```kotlin
+import io.github.pradyumnadp.blobface.Blobface
+import io.github.pradyumnadp.blobface.BlobfaceOptions
+
+val svg: String = Blobface.svg("alain@example.com")           // <svg …viewBox="0 0 100 100">…</svg>
+val uri: String = Blobface.dataUri("alain@example.com")       // data:image/svg+xml,…
+
+val face = Blobface("alain@example.com", BlobfaceOptions(size = 64, hue = 200.0))
+face.shape         // BlobfaceShape.Organic
+face.palette       // BlobfacePalette(bg=#…, head=#…, eye=#…)
+face.layout        // body, face region, petals, eyes as numbers
+face.marks         // drawing primitives (path commands + fills) for your own renderer
+face.toSvgString()
+```
+
+## Platforms
+
+| Platform | `blobface-core` | `blobface-compose` | Sample |
+|---|---|---|---|
+| Android | ✅ | ✅ | ✅ `:sample-android` |
+| JVM / Desktop | ✅ | ✅ | ✅ `:sample:run` |
+| iOS arm64, simulator arm64 | ✅ | ✅ | ✅ `iosApp/` (Xcode) |
+| iOS x64 (Intel simulator) | ✅ | — ¹ | — |
+| JS (IR, browser + Node) | ✅ | ✅ | ✅ `:sample:jsBrowserDevelopmentRun` |
+| Wasm (wasmJs) | ✅ | ✅ | ✅ `:sample:wasmJsBrowserDevelopmentRun` |
+
+¹ Compose Multiplatform 1.12 no longer publishes `iosX64` artifacts.
+
+## Options
+
+Every option of upstream `blobatar(name, opts)` is supported, under the same
+names. In Compose they're parameters of `Blobface(...)`. In core they're fields
+of `BlobfaceOptions`.
+
+| Option | Default | Notes |
+|---|---|---|
+| `size` | Compose: `48.dp`; core: none | Compose sets the size. Core emits `width`/`height` when set (an `Int`) |
+| `background` | `None` | `Squircle`, `Circle`, `Square`, or `None`. Upstream's `true` = `Squircle` |
+| `hue` | from name | Locks the hue in degrees. The name then drives only the shape |
+| `tone` | from name | Locks the swatch as a 0–1 position, pale to ink. `1.0` renders like `0.0`; use `0.999` for ink |
+| `traits` | — | Pins traits as 0–1 positions: `mapOf("shape" to TraitOverride.of(0.95))`, or a list to choose from: `TraitOverride.anyOf(0.11, 0.825)` |
+| `palette` | — | Per-key hex overrides (`bg`, `head`, `eye`). Bypasses the contrast guarantee |
+| `normalize` | `true` | NFC + trim + lowercase before hashing |
+| `contrast` | `true` | Enforces body/backdrop ≥ 1.25:1 and eyes/body ≥ 4.5:1 |
+| `title` | — | `<title>` in SVG, content description in Compose |
+| `expression` | idle | `Happy`, `Sad`, `Mad`, `Surprised`, `Wink`, `Sleepy`, `Smug`, `Unsure`, `Scared`, `Love`, `Shy`, `Sick`, `Thinking` |
+| `animate` (Compose) | `None` | `Hover` or `Always`. Breathe, bob, blink, glance and a lift. Expression changes morph |
+| `gaze` (Compose) | — | Pointer, point, element, rest or none targets |
+
+Trait keys (`BlobfaceTraitKeys.ALL`): `shape, hue, tone, body.r, body.ratio, body.x,
+body.y, body.n, body.rot, body.pts, body.r0–7, gaze.x, gaze.y, eye.rx, eye.ratio,
+eye.scale, eye.stretch, eye.gap, eye.n, eye.lean, eye.lean2, eye.dy, sun.*, cloud.*,
+nub.*, poly.round, capsule.squat, droplet.tip`.
+
+### Animation notes
+
+- **Hover** animates while a mouse hovers over the face, or while a finger is
+  pressed on it. Upstream turns hover motion off entirely on touch devices; blobface
+  uses press instead, so phones get motion too.
+- **Reduced motion** is respected: Android's animator duration scale 0, iOS
+  Reduce Motion, and the web's `prefers-reduced-motion`. The face then renders
+  still.
+- The idle loops, the hover lift and the expression morph use upstream's
+  timings and curves: 2.8 s breathe, 3.4 s bob, a seeded blink and glance, and a
+  300 ms / 400 ms morph.
+
+## Sample app
+
+The sample shows a text field with a live face, controls for every option, and a
+scrolling crowd of 400 names.
+
+```bash
+./gradlew :sample:run                              # Desktop
+./gradlew :sample-android:installDebug             # Android
+./gradlew :sample:wasmJsBrowserDevelopmentRun      # Web (Wasm)
+```
+
+For iOS, open `iosApp/iosApp.xcodeproj` in Xcode and run. The build phase calls
+`:sample:embedAndSignAppleFrameworkForXcode`.
+
+| Desktop | Web (Wasm) |
+|---|---|
+| ![desktop](docs/screenshots/desktop.png) | ![web](docs/screenshots/web.png) |
+
+## Compatibility
+
+`tools/generate-fixtures.mjs` uses the npm package pinned to **blobatar 2.7.0**
+to write about 6.8 MB of fixtures into
+`blobface-core/src/commonTest/resources/fixtures`:
+
+- 500 names: ASCII, mixed case, whitespace, unicode (NFC/NFD, Greek final
+  sigma, Turkish İ, CJK, RTL), emoji and ZWJ sequences, lone surrogates, the
+  empty string, and very long strings.
+- 64 option variants × 16 names: every background, hue, tone, contrast, normalize
+  and title value, palette overrides, trait overrides (fixed, lists, empty, NaN,
+  out of range), and all 14 expressions.
+- Idle-motion frames, pose transforms, pose lerps, colour utilities and gaze
+  math.
+
+`ParityTest` checks SVG output, data URIs, layout numbers, palettes, marks,
+animated SVG parts, motion and gaze math. SVG strings must match **byte for
+byte** and numbers **exactly** (`==`). The one tolerance is that `-0` and `0`
+compare equal, because JSON can't represent `-0`.
+
+```bash
+./gradlew :blobface-core:jvmTest
+cd tools && npm ci && node generate-fixtures.mjs   # regenerate (deliberately)
+```
+
+How the port keeps JS semantics on every platform is described in
+[docs/UPSTREAM_ANALYSIS.md](docs/UPSTREAM_ANALYSIS.md): `Math.imul`, `>>>`,
+`TextEncoder`'s handling of lone surrogates, JS `trim` whitespace,
+`Math.round` rounding halves up, JS number formatting, V8's `Math.hypot`, and
+fdlibm math (`StrictMath`) on the JVM.
+
+### Known differences from upstream
+
+- **`size` is an `Int`** in `BlobfaceOptions`. Upstream accepts any number.
+- **Gaze face measurement**: upstream measures the face from the DOM
+  (`getBBox`, `isPointInFill`). blobface computes the same measurement from the
+  layout geometry, so eye excursions can differ slightly. The gaze *math*
+  (projection, pursuit, thresholds) matches exactly.
+- **Touch**: press-to-animate, and the pointer gaze follows a finger while it is
+  down. Upstream disables both on touch-only devices.
+- **NFC and lowercase** use each platform's Unicode tables, just as upstream
+  depends on the JS engine's.
+- **iOS** results come from the system libm rather than fdlibm. CI runs the
+  parity suite on the iOS simulator to catch any difference.
+
+## Credits
+
+blobface is a port of [blobatar](https://github.com/Alain00/blobatar) by Alain
+([@alain_0012](https://x.com/alain_0012)), licensed under MIT. All credit for the
+design, the shapes, the colour system, the expressions and the motion goes to the
+original author. blobface is an unofficial port and is not affiliated with or
+endorsed by them. See [LICENSE](LICENSE) and [NOTICE](NOTICE).

@@ -1,0 +1,18 @@
+blobface
+Copyright (c) 2026 Pradyumna DP
+
+blobface is a port of blobatar (https://github.com/Alain00/blobatar) by Alain
+(@alain_0012), licensed under MIT.
+
+blobface is an unofficial port. It is not affiliated with or endorsed by the
+original author. It reproduces blobatar's generation algorithm, numeric
+constants and output format (ported from blobatar v2.7.0, commit
+ebb7ea4808b1263629fc8fa65e2398b9cbdb6f6b) so that the same input produces the
+same face. blobatar's logo, wordmark, website copy and visual branding are not
+included.
+
+The original blobatar license:
+
+MIT License
+
+Copyright (c) 2026 Alain
