@@ -3,21 +3,23 @@ package io.github.pradyumnadp.blobface.internal
 import kotlin.math.abs
 import kotlin.math.max
 
-/*
- * The transcendental functions blobatar calls, routed to the implementation that
- * matches V8 most closely on each platform. V8's Math.sin/cos/atan2/asin/cbrt/
- * pow/exp are ports of fdlibm, which is what java.lang.StrictMath is, so JVM and
- * Android use StrictMath; JS and Wasm call the engine's Math directly; Apple
- * platforms use the system libm.
+/**
+ * The transcendental functions blobatar calls, on every platform routed to the
+ * pure-Kotlin fdlibm port ([Fdlibm]) rather than the platform's own math.
+ *
+ * Platform libms (Apple's, and the LLVM libm newer V8 versions use) differ from
+ * each other in the last bit for some inputs. One implementation everywhere makes
+ * blobface's output identical on every target and bit-identical to blobatar
+ * 2.7.0 running on Node 22, which produced the parity fixtures.
  */
-internal expect object JsMath {
-    fun sin(x: Double): Double
-    fun cos(x: Double): Double
-    fun atan2(y: Double, x: Double): Double
-    fun asin(x: Double): Double
-    fun cbrt(x: Double): Double
-    fun pow(x: Double, y: Double): Double
-    fun exp(x: Double): Double
+internal object JsMath {
+    fun sin(x: Double): Double = Fdlibm.sin(x)
+    fun cos(x: Double): Double = Fdlibm.cos(x)
+    fun atan2(y: Double, x: Double): Double = Fdlibm.atan2(y, x)
+    fun asin(x: Double): Double = Fdlibm.asin(x)
+    fun cbrt(x: Double): Double = Fdlibm.cbrt(x)
+    fun pow(x: Double, y: Double): Double = Fdlibm.pow(x, y)
+    fun exp(x: Double): Double = Fdlibm.exp(x)
 }
 
 /** V8's `Math.hypot`: max-scaled Kahan sum, then `sqrt(sum) * max`. */

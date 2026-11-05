@@ -191,6 +191,8 @@ to write about 6.8 MB of fixtures into
   out of range), and all 14 expressions.
 - Idle-motion frames, pose transforms, pose lerps, colour utilities and gaze
   math.
+- About 30,000 `Math.*` results (`sin`, `cos`, `asin`, `atan2`, `exp`, `cbrt`,
+  `pow`) recorded from the same engine.
 
 `ParityTest` checks SVG output, data URIs, layout numbers, palettes, marks,
 animated SVG parts, motion and gaze math. SVG strings must match **byte for
@@ -205,7 +207,10 @@ cd tools && npm ci && node generate-fixtures.mjs   # regenerate (deliberately)
 To match upstream on every platform, the port reproduces JavaScript behaviour
 explicitly: `Math.imul` and `>>>`, `TextEncoder`'s handling of lone surrogates,
 JS `trim` whitespace, `Math.round` rounding halves up, JS number formatting,
-V8's `Math.hypot`, and fdlibm math (`StrictMath`) on the JVM.
+V8's `Math.hypot`, and a pure-Kotlin port of V8's fdlibm math, used on every
+platform. Platform math libraries (Apple's, and the libm in newer JS engines)
+differ in the last bit for some inputs. Using one port everywhere makes every
+target produce identical output.
 
 ### Known differences from upstream
 
@@ -218,8 +223,10 @@ V8's `Math.hypot`, and fdlibm math (`StrictMath`) on the JVM.
   down. Upstream disables both on touch-only devices.
 - **NFC and lowercase** use each platform's Unicode tables, just as upstream
   depends on the JS engine's.
-- **iOS** results come from the system libm rather than fdlibm. CI runs the
-  parity suite on the iOS simulator to catch any difference.
+- **Engine-dependent math**: blobface pins its math to Node 22 (V8 12.4), which
+  produced the fixtures. Newer engines (Node 26, recent Chrome) round `Math.pow`
+  differently in the last bit for some inputs, so upstream itself can vary across
+  browsers in rare cases. Rounding to 2 decimals hides this in practice.
 
 ## Credits
 

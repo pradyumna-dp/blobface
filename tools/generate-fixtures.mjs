@@ -199,4 +199,38 @@ for (const [w, tr] of [[48, 3], [200, 3], [100, 0], [10, 1], [500, 20]]) gaze.th
 for (const t of [0, 0.1, 0.5, 0.9, 1]) gaze.smoothstep.push({ t, v: smoothstep(t) });
 writeFileSync(join(out, "utils.json"), JSON.stringify({ version: VERSION, colors, pairs, fades, gaze }));
 
+// 5. Math.* vectors from the same engine, so every platform's math port can be
+//    checked bit-for-bit (iOS has no fdlibm of its own).
+{
+  let ms = 0x9e3779b9;
+  const r = () => { ms ^= ms << 13; ms >>>= 0; ms ^= ms >>> 17; ms ^= ms << 5; ms >>>= 0; return ms / 4294967296; };
+  const span = (a, b) => a + r() * (b - a);
+  const xs = [0, -0, 1, -1, 0.5, Math.PI, -Math.PI, Math.PI / 2, Math.PI / 4, 1e-9, 1e-300, 1e300, 710, -746];
+  for (let i = 0; i < 3000; i++) xs.push(span(-20, 20));
+  for (let i = 0; i < 800; i++) xs.push(span(-1e6, 1e6));
+  for (let i = 0; i < 300; i++) xs.push(span(-1e20, 1e20));
+  const unit = xs.map((x) => (x - Math.floor(x / 2) * 2) - 1);
+  const ys = xs.map(() => span(-50, 50));
+  const bases = xs.map((x) => Math.abs(x) % 50);
+  const exps = [-1 / 2.4, 1 / 2.4, 2.4, -0.5, 0.5, 3, -2, 0.123, 7.5];
+  const pow = [];
+  bases.forEach((b, i) => { const e = exps[i % exps.length]; pow.push([b, e, Math.pow(b, e)]); });
+  for (let i = 0; i < 400; i++) { const b = r(); pow.push([b, 1 / 2.4, Math.pow(b, 1 / 2.4)]); const c = (r() + 0.055) / 1.055; pow.push([c, 2.4, Math.pow(c, 2.4)]); }
+  const math = {
+    version: VERSION,
+    node: process.versions.node,
+    v8: process.versions.v8,
+    sin: xs.map((x) => [x, Math.sin(x)]),
+    cos: xs.map((x) => [x, Math.cos(x)]),
+    asin: unit.map((x) => [x, Math.asin(x)]),
+    atan2: xs.map((x, i) => [x, ys[i], Math.atan2(x, ys[i])]),
+    exp: xs.map((x) => { const e = Math.max(-800, Math.min(800, x)); return [e, Math.exp(e)]; }),
+    cbrt: xs.map((x) => [x, Math.cbrt(x)]),
+    pow,
+  };
+  // JSON has no -0, Infinity or NaN, so every number is written as its JS string.
+  const enc = (v) => (typeof v === "number" ? (Object.is(v, -0) ? "-0" : String(v)) : v);
+  writeFileSync(join(out, "math.json"), JSON.stringify(math, (_, v) => (Array.isArray(v) ? v.map(enc) : v)));
+}
+
 console.log(`blobatar ${VERSION}: ${cases.length} names, ${optionCases.length} option cases, ${motion.length} motion cases → ${out}`);

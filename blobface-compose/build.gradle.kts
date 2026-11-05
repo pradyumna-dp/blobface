@@ -24,7 +24,7 @@ kotlin {
     // Compose Multiplatform 1.12 no longer publishes iosX64 artifacts.
     iosArm64()
     iosSimulatorArm64()
-    js(IR) { browser() }
+    js { browser() }
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs { browser() }
 

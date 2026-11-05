@@ -23,7 +23,7 @@ kotlin {
     iosX64()
     iosArm64()
     iosSimulatorArm64()
-    js(IR) {
+    js {
         browser { testTask { enabled = false } }
         nodejs { testTask { useMocha { timeout = "120s" } } }
     }
@@ -70,6 +70,15 @@ tasks.matching { it.name.startsWith("compile") && it.name.contains("Test") }.con
 }
 tasks.matching { it.name.contains("TestKotlinMetadata") || it.name.contains("SourcesJar") }.configureEach {
     dependsOn(generateFixturePath)
+}
+
+// Print the full assertion message (the mismatch list) in console/CI output.
+tasks.withType<AbstractTestTask>().configureEach {
+    testLogging {
+        events("failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStandardStreams = false
+    }
 }
 
 mavenPublishing {
