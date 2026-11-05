@@ -14,6 +14,10 @@ original author.
 against fixtures generated from the published npm package (see
 [Compatibility](#compatibility)).
 
+**[▶ Try it live](https://pradyumna-dp.github.io/blobface/)**: type any name and
+change every option in your browser. This is the sample app built with
+Kotlin/Wasm, and it needs a recent Chrome, Edge, Firefox or Safari.
+
 ![The sample app on desktop](docs/screenshots/desktop.png)
 
 ## Install
