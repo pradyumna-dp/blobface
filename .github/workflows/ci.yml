@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  jvm-android-web:
+    name: JVM, Android, JS & Wasm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Parity tests (JVM, Android host, JS on Node, Wasm on Node)
+        run: >
+          ./gradlew --stacktrace
+          :blobface-core:jvmTest
+          :blobface-core:testAndroidHostTest
+          :blobface-core:jsNodeTest
+          :blobface-core:wasmJsNodeTest
+      - name: Compile blobface-compose and the sample
+        run: >
+          ./gradlew --stacktrace
+          :blobface-compose:compileKotlinJvm
+          :blobface-compose:compileAndroidMain
+          :blobface-compose:compileKotlinJs
+          :blobface-compose:compileKotlinWasmJs
+          :sample:compileKotlinJvm
+          :sample-android:assembleDebug
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-reports-linux
+          path: '**/build/reports/tests/'
+
+  ios:
+    name: iOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Parity tests (iOS simulator)
+        run: ./gradlew --stacktrace :blobface-core:iosSimulatorArm64Test
+      - name: Compile iOS targets
+        run: >
+          ./gradlew --stacktrace
+          :blobface-core:compileKotlinIosX64
+          :blobface-core:compileKotlinIosArm64
+          :blobface-compose:compileKotlinIosArm64
+          :blobface-compose:compileKotlinIosSimulatorArm64
+          :sample:linkDebugFrameworkIosSimulatorArm64
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-reports-ios
+          path: '**/build/reports/tests/'
