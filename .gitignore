@@ -17,3 +17,19 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+
+# Claude Code / AI assistant files
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+.mcp.json
+graphify-out/
+
+# Upstream reference clone (never commit)
+.upstream/
+
+# Publishing secrets
+*.gpg
+*.asc
+secring.*
+gradle-local.properties
