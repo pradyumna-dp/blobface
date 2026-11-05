@@ -1,0 +1,12 @@
+{
+  "name": "blobface-fixtures",
+  "private": true,
+  "description": "Generates blobface parity fixtures from the exact upstream blobatar release it ports.",
+  "type": "module",
+  "scripts": {
+    "fixtures": "node generate-fixtures.mjs"
+  },
+  "dependencies": {
+    "blobatar": "2.7.0"
+  }
+}
