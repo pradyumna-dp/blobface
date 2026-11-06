@@ -10,7 +10,7 @@ plugins {
 kotlin {
     explicitApi()
 
-    android {
+    androidLibrary {
         namespace = "io.github.pradyumnadp.blobface.core"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
@@ -68,7 +68,9 @@ val generateFixturePath by tasks.registering {
 tasks.matching { it.name.startsWith("compile") && it.name.contains("Test") }.configureEach {
     dependsOn(generateFixturePath)
 }
-tasks.matching { it.name.contains("TestKotlinMetadata") || it.name.contains("SourcesJar") }.configureEach {
+tasks.matching {
+    it.name.contains("TestKotlinMetadata") || it.name.contains("SourcesJar") || it.name.contains("lint", ignoreCase = true)
+}.configureEach {
     dependsOn(generateFixturePath)
 }
 

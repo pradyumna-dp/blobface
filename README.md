@@ -22,14 +22,19 @@ Kotlin/Wasm, and it needs a recent Chrome, Edge, Firefox or Safari.
 
 ## Install
 
+**Supported toolchain (0.1.1):** Kotlin 2.2.21+, Compose Multiplatform 1.9.x
+(Jetpack Compose 1.9 / BOM 2025.10.01), AGP 8.13+, Gradle 8.13+, `compileSdk` 36+,
+`minSdk` 24+. blobface 0.1.0 was built with Kotlin 2.4 / compileSdk 37 and needs
+a matching toolchain.
+
 ```kotlin
 // build.gradle.kts (a Kotlin Multiplatform module)
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("io.github.pradyumna-dp:blobface-compose:0.1.0") // Compose UI (includes core)
+            implementation("io.github.pradyumna-dp:blobface-compose:0.1.1") // Compose UI (includes core)
             // or, without Compose:
-            implementation("io.github.pradyumna-dp:blobface-core:0.1.0")
+            implementation("io.github.pradyumna-dp:blobface-core:0.1.1")
         }
     }
 }
@@ -40,7 +45,7 @@ With a version catalog:
 ```toml
 # gradle/libs.versions.toml
 [versions]
-blobface = "0.1.0"
+blobface = "0.1.1"
 
 [libraries]
 blobface-core = { module = "io.github.pradyumna-dp:blobface-core", version.ref = "blobface" }

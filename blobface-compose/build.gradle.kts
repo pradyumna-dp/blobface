@@ -12,7 +12,7 @@ plugins {
 kotlin {
     explicitApi()
 
-    android {
+    androidLibrary {
         namespace = "io.github.pradyumnadp.blobface.compose"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
